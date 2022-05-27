@@ -97,6 +97,11 @@ func main() {
 						Usage:  "nft",
 						Action: SendNFT,
 					},
+					{
+						Name:   "buy",
+						Usage:  "buy",
+						Action: Send,
+					},
 				},
 			},
 		},
@@ -131,6 +136,31 @@ func SendCoin(c *cli.Context) error {
 		return err
 	}
 	log.Println("Send ewom:", coin)
+	return nil
+}
+
+// Send 发送购买交易
+func Send(c *cli.Context) error {
+	transAddr := Redis.Get(c.Context, TransCacheKey).Val()
+	// 创建身份，需要私钥
+	auth, err := GetAuth(EwomAddr, EwomKey)
+	if err != nil {
+		panic(err)
+		return err
+	}
+
+	womTX, err := womtx.NewWomTransfer(common.HexToAddress(transAddr), Client)
+	if err != nil {
+		panic(err)
+		return err
+	}
+
+	coin, err := womTX.Send(auth, common.HexToAddress(NftAddr), big.NewInt(0), big.NewInt(1), big.NewInt(10000))
+	if err != nil {
+		panic(err)
+		return err
+	}
+	log.Println("seller:", coin)
 	return nil
 }
 
