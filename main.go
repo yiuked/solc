@@ -5,6 +5,7 @@ import (
 	"geth/ewom"
 	"geth/womnft"
 	"geth/womtx"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -84,25 +85,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "send",
-				Usage: "send",
-				Subcommands: []*cli.Command{
-					{
-						Name:   "ewom",
-						Usage:  "ewom",
-						Action: SendCoin,
-					},
-					{
-						Name:   "nft",
-						Usage:  "nft",
-						Action: SendNFT,
-					},
-					{
-						Name:   "buy",
-						Usage:  "buy",
-						Action: Send,
-					},
-				},
+				Name:   "send",
+				Usage:  "send",
+				Action: Send,
 			},
 		},
 	}
@@ -112,31 +97,6 @@ func main() {
 		panic(err)
 		log.Fatal(err)
 	}
-}
-
-// SendCoin 发送ewom
-func SendCoin(c *cli.Context) error {
-	transAddr := Redis.Get(c.Context, TransCacheKey).Val()
-	// 创建身份，需要私钥
-	auth, err := GetAuth(EwomAddr, EwomKey)
-	if err != nil {
-		panic(err)
-		return err
-	}
-
-	womTX, err := womtx.NewWomTransfer(common.HexToAddress(transAddr), Client)
-	if err != nil {
-		panic(err)
-		return err
-	}
-
-	coin, err := womTX.Coin(auth, common.HexToAddress(NftAddr), big.NewInt(1000))
-	if err != nil {
-		panic(err)
-		return err
-	}
-	log.Println("Send ewom:", coin)
-	return nil
 }
 
 // Send 发送购买交易
@@ -154,38 +114,17 @@ func Send(c *cli.Context) error {
 		panic(err)
 		return err
 	}
-
-	coin, err := womTX.Send(auth, common.HexToAddress(NftAddr), big.NewInt(0), big.NewInt(1), big.NewInt(10000))
+	log.Println("contract:", transAddr)
+	log.Println("seller:", NftAddr)
+	log.Println("token:", 0)
+	log.Println("number:", 1)
+	log.Println("price:", 10)
+	coin, err := womTX.Send(auth, common.HexToAddress(NftAddr), big.NewInt(0), big.NewInt(1), big.NewInt(9), signer2encode(NftAddr, 0, 10))
 	if err != nil {
 		panic(err)
 		return err
 	}
 	log.Println("seller:", coin)
-	return nil
-}
-
-// SendNFT 发送NFT
-func SendNFT(c *cli.Context) error {
-	transAddr := Redis.Get(c.Context, TransCacheKey).Val()
-	// 创建身份，需要私钥
-	auth, err := GetAuth(NftAddr, NftKey)
-	if err != nil {
-		panic(err)
-		return err
-	}
-
-	womTX, err := womtx.NewWomTransfer(common.HexToAddress(transAddr), Client)
-	if err != nil {
-		panic(err)
-		return err
-	}
-
-	coin, err := womTX.Nft(auth, common.HexToAddress(EwomAddr), big.NewInt(0), big.NewInt(1))
-	if err != nil {
-		panic(err)
-		return err
-	}
-	log.Println("Send nft:", coin)
 	return nil
 }
 
@@ -321,4 +260,49 @@ func GetAuth(addr string, key string) (*bind.TransactOpts, error) {
 	}
 
 	return bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(4))
+}
+
+func signer2encode(addr string, tokenID, price int64) []byte {
+	uint256, _ := abi.NewType("uint256", "", nil)
+	address, _ := abi.NewType("address", "", nil)
+
+	arguments := abi.Arguments{
+		{
+			Type: address,
+		},
+		{
+			Type: uint256,
+		},
+		{
+			Type: uint256,
+		},
+	}
+
+	bytes, _ := arguments.Pack(
+		common.HexToAddress(addr),
+		big.NewInt(tokenID),
+		big.NewInt(price),
+	)
+
+	msg := crypto.Keccak256(bytes)
+	log.Println("Keccak256:", common.Bytes2Hex(msg))
+
+	key, _ := crypto.HexToECDSA(NftKey)
+	sig, err := crypto.Sign(msg, key)
+	if err != nil {
+		panic(err)
+	}
+	if len(sig) != 65 {
+		panic("sig error")
+	}
+	switch sig[64] {
+	case 0:
+		sig[64] = 27
+	case 1:
+		sig[64] = 28
+	default:
+	}
+
+	log.Println("sig:", common.Bytes2Hex(sig))
+	return sig
 }
