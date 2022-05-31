@@ -10,20 +10,21 @@ contract WomNFT is ERC1155URIStorage, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    constructor() ERC1155(""){}
 
-    function sendNFT(address creator, string memory url, uint256 amount) public returns (uint256) {
+
+    function sendNFT(address creator, string memory url,uint256 amount) public returns (uint256) {
         require(creator != address(0), "address is null");
-        require(bytes(url).length > 0, "url is empty");
         require(amount > 0, "amount is 0");
 
         uint256 tokenId = _tokenIds.current();
-
-        _setURI(url);
         _mint(creator, tokenId, amount, "");
+        _setURI(tokenId,url);
 
         _tokenIds.increment();
         return tokenId;
     }
 }
 
+// ewom : 0x780f24e640659681cE5Aa9c02B16a62C55a01227
+// nft : 0x2B9B0BC37eD25ED18883C88ede07F97BC6F90296
+// tx: 0xa05e0881aEB7a4d11f5af30Ee61E62E7106596D8

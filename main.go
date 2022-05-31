@@ -119,7 +119,7 @@ func Send(c *cli.Context) error {
 	log.Println("token:", 0)
 	log.Println("number:", 1)
 	log.Println("price:", 10)
-	coin, err := womTX.Send(auth, common.HexToAddress(NftAddr), big.NewInt(0), big.NewInt(1), big.NewInt(9), signer2encode(NftAddr, 0, 10))
+	coin, err := womTX.Send(auth, common.HexToAddress(NftAddr), big.NewInt(0), big.NewInt(1), big.NewInt(10), signer2encode(NftAddr, 0, 10))
 	if err != nil {
 		panic(err)
 		return err
@@ -197,7 +197,7 @@ func MintNFT(c *cli.Context) error {
 		return err
 	}
 
-	sendNFT, err := nft.SendNFT(auth, common.HexToAddress(NftAddr), "0000", big.NewInt(100))
+	sendNFT, err := nft.SendNFT(auth, common.HexToAddress(NftAddr), big.NewInt(100))
 	if err != nil {
 		panic(err)
 		return err
