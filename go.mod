@@ -6,6 +6,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.18
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/urfave/cli/v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

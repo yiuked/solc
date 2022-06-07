@@ -18,16 +18,20 @@ contract WomTransfer is Ownable{
     }
 
     //
-    function MintTransfer(address seller, uint256 token, uint256 number, uint256 price, bytes memory signature) external {
+    function MintTransfer(address seller, uint256 token, string memory _url, uint256 number, uint256 price, bytes memory signature) external {
         bytes32 digest = keccak256(abi.encode(seller, token, price));
 
         // 签名验证
         address recoveredSigner = ECDSA.recover(digest, signature);
         require(recoveredSigner == seller, "seller error");
 
+        // 授权
+        bool success = ewomToken.approve(address(this),price);
+        require(success, "ewom approval error");
+
         // 铸造NFT
-        uint256 tokenID = womNFT.sendNFT(seller, number);
-        require(tokenID > 0, "mint token error");
+        uint256 tokenID = womNFT.sendNFT(seller, _url,number);
+        require(tokenID >= 0, "mint token error");
 
         // 转账给卖家
         bool boo = ewomToken.transferFrom(msg.sender, seller, price);
